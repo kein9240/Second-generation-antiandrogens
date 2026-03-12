@@ -1,0 +1,436 @@
+<!--
+Palette: Professional Vibrant Medical (Dark: #1A365D, Primary: #00B4D8, Accent: #F50057, Success: #00E676)
+Confirmation: NEITHER Mermaid JS NOR SVG were used anywhere in the output.
+Plan:
+1. Notion-Native Aesthetic: NotionのUIに馴染むよう、フォントスタックを修正し、背景色を完全な白(#FFFFFF)に設定。
+2. Fluid Layout: Notionの「全幅」設定やリサイズに対応するため、コンテナのmax-widthを解除し、100%幅でレスポンシブに動作。
+3. Safe Rendering: iFrame内でのレンダリングを安定させるため、CSSのoverflow制御を強化し、Chart.jsの描画タイミングを最適化。
+4. Accessibility: Notion上での読み込み時間を考慮し、軽量なCDNとインラインCSSで構成。
+Visualizations:
+- MFS Comparison -> Goal: Compare -> Bar Chart -> Chart.js (NO SVG)
+- Drug Radar -> Goal: Compare -> Radar Chart -> Chart.js (NO SVG)
+- Algorithm Flow -> Goal: Organize -> HTML/CSS Timeline (NO SVG)
+- Rash Incidence -> Goal: Inform -> Doughnut Chart -> Chart.js (NO SVG)
+-->
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>前立腺がん治療戦略インフォグラフィック</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --notion-bg: #FFFFFF;
+            --notion-text: #37352F;
+            --medical-dark: #1A365D;
+            --medical-primary: #00B4D8;
+            --medical-accent: #F50057;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, "Apple Color Emoji", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol", 'Noto Sans JP';
+            background-color: var(--notion-bg);
+            color: var(--notion-text);
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .chart-container {
+            position: relative;
+            width: 100%;
+            height: 300px;
+            margin: 0 auto;
+        }
+
+        .notion-card {
+            background: white;
+            border: 1px solid rgba(55, 53, 47, 0.09);
+            border-radius: 8px;
+            padding: 24px;
+            box-shadow: none;
+            transition: background 100ms ease-out;
+            height: 100%;
+        }
+
+        .timeline-line {
+            position: absolute;
+            left: 20px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: rgba(55, 53, 47, 0.09);
+        }
+
+        .timeline-item {
+            position: relative;
+            padding-left: 50px;
+            padding-bottom: 32px;
+        }
+
+        .timeline-marker {
+            position: absolute;
+            left: 12px;
+            top: 4px;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: white;
+            border: 3px solid var(--medical-primary);
+            z-index: 2;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 3px;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+        }
+
+        /* Prevent scrollbars on small embeds */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(55, 53, 47, 0.1); border-radius: 10px; }
+    </style>
+</head>
+<body class="p-4 md:p-10">
+
+    <div class="w-full mx-auto">
+        
+        <header class="mb-12 border-b border-[rgba(55,53,47,0.09)] pb-8">
+            <div class="flex items-center gap-4 mb-3">
+                <span class="text-4xl">🧬</span>
+                <h1 class="text-2xl md:text-4xl font-black text-[#1A365D] leading-tight">前立腺がん：アーリーダと最新治療アルゴリズム</h1>
+            </div>
+            <p class="text-gray-500 text-sm md:text-lg max-w-4xl leading-relaxed">
+                去勢抵抗性(CRPC)および去勢感受性(CSPC)の病態に応じた第2世代AR阻害薬の最適化。2026年現在の最新エビデンスに基づく視覚的ガイド。
+            </p>
+        </header>
+
+        <!-- Metrics Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-12">
+            
+            <div class="lg:col-span-7">
+                <div class="notion-card">
+                    <h2 class="font-bold text-xl mb-6 flex items-center gap-3 text-[#1A365D]">
+                        <span class="p-1.5 bg-blue-50 rounded">📊</span> 病態別の戦略的目標
+                    </h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+                        <div class="bg-blue-50/50 p-5 rounded-lg border border-blue-100">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="font-bold text-[#1A365D]">nmCRPC</span>
+                                <span class="status-badge bg-[#00B4D8] text-white">転移阻止</span>
+                            </div>
+                            <p class="text-xs text-gray-600 leading-normal font-medium">画像診断で転移がない去勢抵抗性。無転移生存期間(MFS)を最大化し、生活の質を守る。</p>
+                        </div>
+                        <div class="bg-pink-50/50 p-5 rounded-lg border border-pink-100">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="font-bold text-[#1A365D]">mCSPC</span>
+                                <span class="status-badge bg-[#F50057] text-white">生存延長</span>
+                            </div>
+                            <p class="text-xs text-gray-600 leading-normal font-medium">初診時から転移がある去勢感受性。Upfront治療（初期からの強力な介入）が標準。</p>
+                        </div>
+                    </div>
+                    <div class="pt-4">
+                        <p class="text-[11px] font-black text-gray-400 mb-4 uppercase text-center tracking-[0.2em]">概念的無転移生存期間 (MFS)</p>
+                        <div class="chart-container">
+                            <canvas id="mfsChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="lg:col-span-5">
+                <div class="notion-card">
+                    <h2 class="font-bold text-xl mb-6 flex items-center gap-3 text-[#1A365D]">
+                        <span class="p-1.5 bg-gray-50 rounded">⚖️</span> AR阻害薬の比較プロファイル
+                    </h2>
+                    <div class="chart-container h-[280px]">
+                        <canvas id="radarChart"></canvas>
+                    </div>
+                    <div class="mt-8 space-y-3">
+                        <div class="flex items-start gap-3 p-3 bg-gray-50/50 rounded-lg">
+                            <span class="text-lg">⚡</span>
+                            <div>
+                                <p class="text-xs font-bold text-gray-800 leading-tight">アーリーダ (アパルタミド)</p>
+                                <p class="text-[11px] text-gray-500 mt-0.5">強力な転移抑制。1日1回投与の利便性。</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start gap-3 p-3 bg-gray-50/50 rounded-lg">
+                            <span class="text-lg">🛡️</span>
+                            <div>
+                                <p class="text-xs font-bold text-gray-800 leading-tight">ニュベクオ (ダロルタミド)</p>
+                                <p class="text-[11px] text-gray-500 mt-0.5">脳移行が少なく、転倒や認知機能への影響を最小化。</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Timeline Section -->
+        <section class="notion-card mb-12">
+            <h2 class="font-bold text-xl mb-10 flex items-center gap-3 text-[#1A365D]">
+                <span class="p-1.5 bg-gray-50 rounded">🛤️</span> 2026年最新治療アルゴリズム
+            </h2>
+            <div class="relative max-w-5xl mx-auto">
+                <div class="timeline-line"></div>
+                
+                <div class="timeline-item">
+                    <div class="timeline-marker" style="border-color: #E2E8F0;"></div>
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-2">
+                        <h3 class="text-sm font-bold text-gray-900">1. 局所前立腺癌 (Stage I-III)</h3>
+                        <span class="text-[10px] bg-gray-100 text-gray-500 px-2 py-0.5 rounded font-bold">根治を目指す</span>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-1 leading-relaxed">手術(RARP)または放射線療法。高リスク例では2-3年のADT併用が標準的。</p>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-marker"></div>
+                    <h3 class="text-sm font-bold text-gray-900">2. PSA再発 / 転移出現</h3>
+                    <p class="text-xs text-gray-500 mt-1 leading-relaxed">画像診断(PSMA-PET等)で転移の有無と部位を確定。早期の救済療法を検討。</p>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-marker" style="border-color: var(--medical-accent);"></div>
+                    <div class="bg-gray-50 p-5 rounded-xl border border-[rgba(55,53,47,0.06)]">
+                        <h3 class="text-xs font-black text-[#F50057] mb-3 uppercase tracking-wider">Upfront Intensification (mCSPC)</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <span class="text-[10px] font-bold text-gray-400 block mb-1.5">STANDARD CARE</span>
+                                <p class="text-xs font-bold text-gray-700 leading-normal">ADT ＋ 第2世代AR阻害薬<br><span class="text-gray-500 font-medium">(アーリーダ / イクスタンジ / ザイティガ)</span></p>
+                            </div>
+                            <div>
+                                <span class="text-[10px] font-bold text-gray-400 block mb-1.5">TRI-MODALITY</span>
+                                <p class="text-xs font-bold text-gray-700 leading-normal">ADT ＋ ニュベクオ ＋<br>ドセタキセル <span class="text-[10px] text-red-500 font-bold">(高腫瘍量例)</span></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="timeline-item pb-0">
+                    <div class="timeline-marker" style="border-color: var(--medical-dark);"></div>
+                    <h3 class="text-sm font-bold text-gray-900">4. 去勢抵抗性 (mCRPC)</h3>
+                    <p class="text-xs text-gray-500 mt-1 leading-relaxed">
+                        個別化医療の段階。カバジタキセル、PARP阻害薬、放射性リガンド療法(Lu-177)など、遺伝子変異やPSMA発現に応じた治療へ。
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Safety Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            
+            <div class="notion-card">
+                <h2 class="font-bold text-sm mb-6 text-[#F50057] flex items-center gap-2">
+                    <span class="text-base">🚨</span> 皮疹管理の重要性
+                </h2>
+                <div class="chart-container h-[180px]">
+                    <canvas id="rashChart"></canvas>
+                </div>
+                <div class="mt-6 p-4 bg-red-50 rounded-lg">
+                    <p class="text-[11px] text-red-700 leading-relaxed font-medium">
+                        アーリーダ服用者の<strong>約25%</strong>に皮疹が発現。開始から4ヶ月以内が重要。少しの赤みでも早期の休薬判断を。
+                    </p>
+                </div>
+            </div>
+            
+            <div class="md:col-span-2">
+                <div class="notion-card">
+                    <h2 class="font-bold text-sm mb-6 text-[#1A365D] flex items-center gap-2">
+                        <span class="text-base">🔍</span> 医療従事者向け服薬指導ガイド
+                    </h2>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div class="border border-[rgba(55,53,47,0.09)] rounded-lg p-4 bg-white">
+                            <p class="text-[10px] font-bold text-[#00B4D8] uppercase mb-1.5">Interaction</p>
+                            <p class="text-xs text-gray-700 leading-snug">強力なCYP3A4誘導作用。ワルファリンやNOAC等の抗凝固薬の効果を弱めるリスクに注意。</p>
+                        </div>
+                        <div class="border border-[rgba(55,53,47,0.09)] rounded-lg p-4 bg-white">
+                            <p class="text-[10px] font-bold text-[#00B4D8] uppercase mb-1.5">Thyroid</p>
+                            <p class="text-xs text-gray-700 leading-snug">甲状腺機能低下(約8%)のリスク。定期的なTSH/FT4モニタリングと、倦怠感のチェック。</p>
+                        </div>
+                        <div class="border border-[rgba(55,53,47,0.09)] rounded-lg p-4 bg-white">
+                            <p class="text-[10px] font-bold text-[#00B4D8] uppercase mb-1.5">Absorption</p>
+                            <p class="text-xs text-gray-700 leading-snug">ニュベクオは必ず<strong>食後</strong>に服用。空腹時では吸収率が1/4まで低下するため指導を徹底。</p>
+                        </div>
+                        <div class="border border-[rgba(55,53,47,0.09)] rounded-lg p-4 bg-white">
+                            <p class="text-[10px] font-bold text-[#00B4D8] uppercase mb-1.5">Neuro-Safety</p>
+                            <p class="text-xs text-gray-700 leading-snug">痙攣既往やふらつきがある高齢者には、BBB移行性の低いニュベクオの優先を検討。</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <footer class="mt-16 text-center border-t border-[rgba(55,53,47,0.09)] pt-8">
+            <p class="text-[11px] text-gray-400 font-medium">Reference: SPARTAN / TITAN / ARAMIS / ARASENS trials. 2026 Prostate Cancer Treatment Guidelines Insight.</p>
+        </footer>
+
+    </div>
+
+    <script>
+        // Data processing for Chart.js
+        const wrapLabels = (labels) => {
+            return labels.map(label => {
+                if (typeof label !== 'string' || label.length <= 16) return label;
+                const words = label.split(' ');
+                if (words.length === 1) {
+                    const mid = Math.ceil(label.length / 2);
+                    return [label.slice(0, mid), label.slice(mid)];
+                }
+                const lines = [];
+                let currentLine = words[0];
+                for (let i = 1; i < words.length; i++) {
+                    const word = words[i];
+                    if (currentLine.length + word.length + 1 <= 16) {
+                        currentLine += ' ' + word;
+                    } else {
+                        lines.push(currentLine);
+                        currentLine = word;
+                    }
+                }
+                lines.push(currentLine);
+                return lines;
+            });
+        };
+
+        const tooltipConfig = {
+            backgroundColor: '#1A365D',
+            titleFont: { weight: 'bold', size: 12 },
+            bodyFont: { size: 12 },
+            padding: 10,
+            cornerRadius: 4,
+            callbacks: {
+                title: function(tooltipItems) {
+                    const item = tooltipItems[0];
+                    let label = item.chart.data.labels[item.dataIndex];
+                    return Array.isArray(label) ? label.join(' ') : label;
+                }
+            }
+        };
+
+        Chart.defaults.font.family = "'Inter', 'Noto Sans JP', sans-serif";
+        Chart.defaults.color = '#8E8E93';
+
+        // MFS Chart
+        new Chart(document.getElementById('mfsChart').getContext('2d'), {
+            type: 'bar',
+            data: {
+                labels: wrapLabels(['ADT単独 (プラセボ)', 'アーリーダ併用']),
+                datasets: [{
+                    label: 'MFS (中央値/ヶ月)',
+                    data: [16.2, 40.5],
+                    backgroundColor: ['#F2F2F7', '#00B4D8'],
+                    borderRadius: 3,
+                    barThickness: 36
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                indexAxis: 'y',
+                plugins: {
+                    legend: { display: false },
+                    tooltip: tooltipConfig
+                },
+                scales: {
+                    x: { 
+                        grid: { color: 'rgba(55, 53, 47, 0.05)' },
+                        ticks: { font: { size: 10 } }
+                    },
+                    y: { 
+                        grid: { display: false },
+                        ticks: { color: '#1A365D', font: { weight: 'bold', size: 11 } }
+                    }
+                }
+            }
+        });
+
+        // Radar Chart
+        new Chart(document.getElementById('radarChart').getContext('2d'), {
+            type: 'radar',
+            data: {
+                labels: wrapLabels(['服薬の簡便さ (1日1回等)', '中枢神経安全性 (BBB)', '薬剤相互作用の少なさ', '皮膚症状の少なさ']),
+                datasets: [
+                    {
+                        label: 'アーリーダ',
+                        data: [9, 5, 3, 2],
+                        borderColor: '#F50057',
+                        backgroundColor: 'rgba(245, 0, 87, 0.08)',
+                        borderWidth: 2,
+                        pointRadius: 3
+                    },
+                    {
+                        label: 'ニュベクオ',
+                        data: [5, 10, 8, 8],
+                        borderColor: '#00B4D8',
+                        backgroundColor: 'rgba(0, 180, 216, 0.08)',
+                        borderWidth: 2,
+                        pointRadius: 3
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { 
+                        position: 'top', 
+                        labels: { boxWidth: 10, font: { size: 10, weight: 'bold' }, color: '#37352F' } 
+                    },
+                    tooltip: tooltipConfig
+                },
+                scales: {
+                    r: {
+                        angleLines: { color: 'rgba(55, 53, 47, 0.05)' },
+                        grid: { color: 'rgba(55, 53, 47, 0.05)' },
+                        ticks: { display: false, stepSize: 2 },
+                        pointLabels: { 
+                            font: { size: 10, weight: '600' },
+                            color: '#37352F'
+                        },
+                        suggestedMin: 0, suggestedMax: 10
+                    }
+                }
+            }
+        });
+
+        // Rash Chart
+        new Chart(document.getElementById('rashChart').getContext('2d'), {
+            type: 'doughnut',
+            data: {
+                labels: wrapLabels(['皮疹あり (Grade 1-3)', '皮疹なし']),
+                datasets: [{
+                    data: [25, 75],
+                    backgroundColor: ['#F50057', '#F2F2F7'],
+                    borderWidth: 0,
+                    hoverOffset: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '82%',
+                plugins: {
+                    legend: { display: false },
+                    tooltip: tooltipConfig
+                }
+            }
+        });
+
+        // Ensure charts resize properly on window resize (important for Notion full-width toggle)
+        window.addEventListener('resize', () => {
+            Chart.instances.forEach(chart => chart.resize());
+        });
+    </script>
+</body>
+</html>
